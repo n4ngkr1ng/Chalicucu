@@ -93,7 +93,7 @@ Global $AndroidAdbZoomoutEnabled = True ; Use Android ADB zoom-out script
 Global $AndroidAdbClickDragEnabled = True ; Use Android ADB click drag script
 Global $AndroidAdbInputEnabled = True ; Enable Android ADB send text (CC requests), swipe not used as click drag anymore
 Global $AndroidAdbInputWordsCharLimit = 0 ; Android ADB send text words (split by space) with this limit of specified characters per command (0 = disabled and entire text is sent at once)
-Global $AndroidAdbClickEnabled = True ; Enable Android ADB mouse click
+Global $AndroidAdbClickEnabled = False ; Enable Android ADB mouse click
 Global $AndroidAdbClicksEnabled = False ; (Experimental & Dangerous!) Enable Android KeepClicks() and ReleaseClicks() to fire collected clicks all at once, only available when also $AndroidAdbClick = True
 Global $AndroidAdbClicksTroopDeploySize = 0 ; (Experimental & Dangerous!) Deploy more troops at once, 0 = deploy group, only available when also $AndroidAdbClicksEnabled = True (currently only just in CSV Deploy)
 Global $AndroidAdbInstanceEnabled = True ; Enable Android steady ADB shell instance when available
@@ -141,6 +141,8 @@ Global $AndroidAppConfig[5][14] = [ _ ;                    |                    
 Global $OnlyInstance = True
 Global $FoundRunningAndroid = False
 Global $FoundInstalledAndroid = False
+Global $OpenAndroidActive = 0 ; Recursive count of OpenAndroid() call to launch Android
+Global $OpenAndroidActiveMaxTry = 3 ; Try recursively 3 times to open Android
 
 Global $AndroidConfig = 0 ; Default selected Android Config of $AndroidAppConfig array
 Global $AndroidVersion ; Identified version of Android Emulator
@@ -1431,14 +1433,22 @@ Global $THSnipeBeforeDBTiles = 0 , $THSnipeBeforeLBTiles = 0
 Global $THSnipeBeforeDBScript = 0 , $THSnipeBeforeLBScript = 0
 
 ;[Chalicucu] Switch COC account 
-Global Const $nTotalCOCAcc = 8		;Number of Google+ accounts on emulator
+Global $nTotalCOCAcc	; up to 8		;Number of Google+ accounts on emulator
 Global $CoCAccNo
 Global $profile = $sProfilePath & "\profile.ini"
+$nTotalCOCAcc = Int(Iniread($profile, "switchcocacc", "totalacc", "0"))
+If $nTotalCOCAcc = 0 Then
+	SetLog("---------------Switch CoC Accounts ---------------", $COLOR_RED)
+	SetLog("Set up your total google account first!", $COLOR_RED)
+	SetLog("------------------------------------------------------", $COLOR_RED)
+	$nTotalCOCAcc = 8
+EndIf
+Global $ichkSwitchAcc = Int(IniRead($profile, "switchcocacc" , "Enable" ,"1"))
 Global $nCurCOCAcc = 1     ;Chalicucu Current COC account index : 1 of 3 acc
-Global $nCurStep = 0
+Global $nCurStep = -1
 Global $anCOCAccIdx[$CoCAccNo]		; = [1, 3, 2]       ; 1->3->2->1	; Account walking step
 Global $anBotProfileIdx[$nTotalCOCAcc]; = [1, 2, 3]		;	bot profile index correspond to COC account
-InitOrder()
+;InitOrder()
 ;Training progress for accounts
 Global $AccDonBarb[$nTotalCOCAcc], $AccDonArch[$nTotalCOCAcc], $AccDonGiant[$nTotalCOCAcc], $AccDonGobl[$nTotalCOCAcc], $AccDonWall[$nTotalCOCAcc], $AccDonBall[$nTotalCOCAcc], $AccDonWiza[$nTotalCOCAcc], $AccDonHeal[$nTotalCOCAcc]
 Global $AccDonMini[$nTotalCOCAcc], $AccDonHogs[$nTotalCOCAcc], $AccDonValk[$nTotalCOCAcc], $AccDonGole[$nTotalCOCAcc], $AccDonWitc[$nTotalCOCAcc], $AccDonLava[$nTotalCOCAcc], $AccDonDrag[$nTotalCOCAcc], $AccDonPekk[$nTotalCOCAcc]
@@ -1448,3 +1458,4 @@ Global $AccCurBarb[$nTotalCOCAcc],  $AccCurArch[$nTotalCOCAcc],  $AccCurGiant[$n
 Global $AccCurMini[$nTotalCOCAcc],  $AccCurHogs[$nTotalCOCAcc],  $AccCurValk[$nTotalCOCAcc], $AccCurGole[$nTotalCOCAcc],  $AccCurWitc[$nTotalCOCAcc],  $AccCurLava[$nTotalCOCAcc],  $AccCurDrag[$nTotalCOCAcc],  $AccCurPekk[$nTotalCOCAcc]
 Global $AccFirstStart[$nTotalCOCAcc]
 Global $AccTotalTrainedTroops[$nTotalCOCAcc]
+Global $AccRelaxTogether = Iniread($profile, "switchcocacc", "AttackRelax", 1)
