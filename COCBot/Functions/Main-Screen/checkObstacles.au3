@@ -32,7 +32,9 @@ Func checkObstacles() ;Checks if something is in the way for mainscreen
 		If $debugsetlog = 1 Then SetLog("(Maintenance=" & _GetPixelColor($aIsMaintenance[0], $aIsMaintenance[1]) & ")(RateCoC=" & ")", $COLOR_PURPLE)
 		If $debugsetlog = 1 Then SetLog("33B5E5=>true, 282828=>false", $COLOR_PURPLE)
 		;;;;;;;##### 1- Another device #####;;;;;;;
-		If _ImageSearchArea($device, 0, 237, 321 + $midOffsetY, 293, 346 + $midOffsetY, $x, $y, 80) Then
+		$result = getOcrMaintenanceTime(184, 325 + $midOffsetY) ; OCR text to find Another device message
+		If StringInStr($result, "device", $STR_NOCASESENSEBASIC) Or _
+			_ImageSearchArea($device, 0, 237, 321 + $midOffsetY, 293, 346 + $midOffsetY, $x, $y, 80) Then
 			If $sTimeWakeUp > 3600 Then
 				SetLog("Another Device has connected, waiting " & Floor(Floor($sTimeWakeUp / 60) / 60) & " hours " & Floor(Mod(Floor($sTimeWakeUp / 60), 60)) & " minutes " & Floor(Mod($sTimeWakeUp, 60)) & " seconds", $COLOR_RED)
 				PushMsg("AnotherDevice3600")
@@ -114,7 +116,6 @@ Func checkObstacles() ;Checks if something is in the way for mainscreen
 		EndSelect
 		PureClickP($aReloadButton, 1, 0, "#0131"); Click for out of sync or inactivity or connection lost or maintenance
 		If _Sleep($iDelaycheckObstacles3) Then Return
-		
 		myHide()    ;Chalicucu hide Emulator
 		Return True
 	EndIf
@@ -185,11 +186,5 @@ Func checkObstacles() ;Checks if something is in the way for mainscreen
 			Return True
 		EndIf
 	EndIf
-	
-	;Chalicucu click Cancel Button while load other village
-	; If _ColorCheck(_GetPixelColor(443, 430, True), Hex(4284390935, 6), 20) Then
-	;	PureClick(383, 430, 1, 0, "Click Cancel")      ;Click Cancel
-	; EndIf
-	
 	Return False
 EndFunc   ;==>checkObstacles
