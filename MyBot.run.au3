@@ -47,7 +47,7 @@ EndIf
 #include "COCBot\MBR Global Variables.au3"
 #include "COCBot\functions\Config\ScreenCoordinates.au3"
 
-$sBotVersion = "v6.1.2.1" ;~ Don't add more here, but below. Version can't be longer than vX.y.z because it it also use on Checkversion()
+$sBotVersion = "v6.1.3" ;~ Don't add more here, but below. Version can't be longer than vX.y.z because it it also use on Checkversion()
 $sBotTitle = "My Bot " & $sBotVersion & " " ;~ Don't use any non file name supported characters like \ / : * ? " < > |
 
 Opt("WinTitleMatchMode", 3) ; Window Title exact match mode
@@ -164,6 +164,8 @@ SetDebugLog("MyBot.run launch time " & Round($iBotLaunchTime) & " ms.")
 ;~ Restore process priority
 ProcessSetPriority(@AutoItPID, $iBotProcessPriority)
 
+InitOrder()		;chalicucu init SwitchCOCAcc
+
 ;AutoStart Bot if request
 AutoStart()
 
@@ -183,19 +185,26 @@ BotClose()
 Func runBot() ;Bot that runs everything in order
 	$TotalTrainedTroops = 0
 	Local $Quickattack = False
-	RequestCC()		;Chalicucu
-	Train()			;Chalicucu
-    SwitchCOCAcc(True)	;Chalicucu, first match acc and profile
+	If $ichkSwitchAcc = 1 Then
+		RequestCC()		;Chalicucu
+		;Train()			;Chalicucu
+		SwitchCOCAcc(True)	;Chalicucu, first match acc and profile
+	EndIf
 	While 1
 		$Restart = False
 		$fullArmy = False
 		$CommandStop = -1
 		If _Sleep($iDelayRunBot1) Then Return
 		If GotoAttack() = False Then    ;Chalicucu not start emulator. relax
-            CloseAndroid()
-			SetLog("Relax! Attack not planned...",$COLOR_RED)
-            If _Sleep(600000) Then Return
-            ContinueLoop   
+            If $ichkSwitchAcc=1 And $AccRelaxTogether = 1 Then
+				CloseAndroid()
+				SetLog("Relax! Attack not planned...",$COLOR_RED)
+				If _Sleep(600000) Then Return
+				ContinueLoop   
+			ElseIf $ichkSwitchAcc = 1 Then
+				SwitchCOCAcc()
+				If _Sleep(20000) Then Return
+			EndIf
         EndIf
 		checkMainScreen()
 		If $Restart = True Then ContinueLoop
@@ -309,7 +318,6 @@ Func runBot() ;Bot that runs everything in order
 			   SaveStatChkDeadBase()
 			   If $CommandStop <> 0 And $CommandStop <> 3 Then
 				  AttackMain()
-				  ;RequestCC()		;Chalicucu
 				  If $OutOfGold = 1 Then
 					 Setlog("Switching to Halt Attack, Stay Online/Collect mode ...", $COLOR_RED)
 					 $ichkBotStop = 1 ; set halt attack variable
@@ -353,7 +361,6 @@ Func runBot() ;Bot that runs everything in order
 	WEnd
 EndFunc   ;==>runBot
 
-
 Func Idle() ;Sequence that runs until Full Army
 	Local $TimeIdle = 0 ;In Seconds
 	;If $debugsetlog = 1 Then SetLog("Func Idle ", $COLOR_PURPLE)
@@ -363,9 +370,9 @@ Func Idle() ;Sequence that runs until Full Army
 		If $RequestScreenshot = 1 Then PushMsg("RequestScreenshot")
 		If _Sleep($iDelayIdle1) Then Return
 		;If $CommandStop = -1 Then SetLog("====== Waiting for full army ======", $COLOR_GREEN)
-		If $CommandStop = -1 Or $CommandStop = 0 Then 	;Chalicucu
+		If $CommandStop = -1 Or ($ichkSwitchAcc=1 And $CommandStop = 0) Then 	;Chalicucu
             SetLog("====== Waiting for full army ======", $COLOR_GREEN)
-            If (($CurCamp/$TotalCamp)*100) < 85 Or $CommandStop = 0 Then    ;Chalicucu
+            If $ichkSwitchAcc =1 And ((($CurCamp/$TotalCamp)*100) < 85 Or $CommandStop = 0) Then    ;Chalicucu
                 RequestCC()
 				SetLog("====== Switching COC account ======", $COLOR_GREEN)
 				SwitchCOCAcc()      ;Chalicucu switch COC acc
@@ -531,6 +538,7 @@ Func Attack() ;Selects which algorithm
 		algorithm_AllTroops()
 	EndIf
 EndFunc   ;==>Attack
+
 
 Func QuickAttack()
    Local   $quicklymilking=0
