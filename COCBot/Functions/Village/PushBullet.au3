@@ -143,7 +143,6 @@ Func _RemoteControlPushBullet()
 							_PushToPushBullet($iOrigPushBullet & " | " & GetTranslated(620,48, "Request to Stop") & "..." & "\n" & GetTranslated(620,50, "Your bot is currently stopped, no action was taken"))
 						EndIf
 					Case Else ;
-						Local $comboBoxArray
 						Local $lsNewOrd
 						If StringLeft($body[$x], 7) = "BOT ACC" Then		;Chalicucu order switch COC Account
 							$lsNewOrd = ReorderAcc(StringMid($body[$x], 9))
@@ -154,7 +153,7 @@ Func _RemoteControlPushBullet()
 							_PushToPushBullet("Reordered bot profile: " & $lsNewOrd )
 							_DeleteMessageOfPushBullet($iden[$x])
 						ElseIf StringLeft($body[$x], 10) = "BOT ALLPRO" Then		;Chalicucu order switch bot profile
-							$lsNewOrd = ReorderCurPro(StringMid($body[$x], 12))
+							$lsNewOrd = ReorderAllPro(StringMid($body[$x], 12))
 							_PushToPushBullet("Reordered bot profile for all acc: " & $lsNewOrd )
 							_DeleteMessageOfPushBullet($iden[$x])
 						ElseIf StringLeft($body[$x], 7) = "BOT MAP" Then		;Chalicucu Mapping Account & Profile
@@ -179,13 +178,8 @@ Func _RemoteControlPushBullet()
 							SetLog("Receive STOPSTART", $COLOR_RED)
 							_PushToPushBullet("Received STOPSTART")
 							_DeleteMessageOfPushBullet($iden[$x])
-						; ElseIf $body[$x] = "BOT ALL RESTART" Then		;NOT GOODDDDD Chalicucu RESTART bot without profile name
-							; SetLog("[ALL RESTART] Your request has been received. Bot and Android Emulator restarting...", $COLOR_GREEN)
-							; _PushToPushBullet($iOrigPushBullet & " | " & GetTranslated(620,46, "Request to Restart") & "..." & "\n" & GetTranslated(620,47, "Your bot and Android Emulator are now restarting") & "...")
-							; SaveConfig()
-							; _DeleteMessageOfPushBullet($iden[$x])
-							; _Restart()
 						EndIf
+						
 						Local $lenstr = StringLen(GetTranslated(620,1, -1) & " " & StringUpper($iOrigPushBullet) & " " & "")
 						Local $teststr = StringLeft($body[$x], $lenstr)
 						If $teststr = (GetTranslated(620,1, -1) & " " & StringUpper($iOrigPushBullet) & " " & "") Then

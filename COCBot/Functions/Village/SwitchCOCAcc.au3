@@ -1,6 +1,6 @@
 ; #FUNCTION# ====================================================================================================================
 ; Name ..........: SwitchCocAcc
-; Description ...: This file Includes all functions to current GUI
+; Description ...: Switching COC accounts to play
 ; Syntax ........:
 ; Parameters ....: None
 ; Return values .: None
@@ -23,6 +23,7 @@ Func SwitchCOCAcc($FirstSwitch = False)     ;change COC account
 		SetLog("Target account is current one. Nothing to do..", $COLOR_GREEN)
 		$nCurStep = $lnNextStep		;but still move to next step
 		$iGoldLast = ""
+		$iElixirLast = ""
 		Return
 	EndIf
 	Local $nPreCOCAcc = $nCurCOCAcc
@@ -213,7 +214,7 @@ Func ProGetOrderName()
 	Local $comboBoxArray = _GUICtrlComboBox_GetListArray($cmbProfile)
 	$orderstr &= " (" & $comboBoxArray[$anBotProfileIdx[$anCOCAccIdx[0] - 1]]	; need check ubound
 	For $i = 1 to $CoCAccNo - 1
-		If $anBotProfileIdx[$i] > Ubound($comboBoxArray) - 1 Then
+		If $anBotProfileIdx[$anCOCAccIdx[$i] - 1] > Ubound($comboBoxArray) - 1 Then
 			$orderstr &= ", [Wrong profile index: " & $anBotProfileIdx[$anCOCAccIdx[$i] - 1] & "]"
 		Else
 			$orderstr &= ", " & $comboBoxArray[$anBotProfileIdx[$anCOCAccIdx[$i] - 1]]
@@ -244,23 +245,21 @@ Func AccStartInit()
 	$AccTotalTrainedTroops = $initAccTrain
 EndFunc   ;==> AccStartInit
 
-Func ReorderAcc($cfgStr)
-	Local $reorderstr = ""
+Func ReorderAcc($cfgStr, $GUIconfig = False)
+	Local $reorderstr = "", $lbWrongCfg = False
 	Local $lsNewOrd = StringStripWS($cfgStr, $STR_STRIPALL)
-	Local $oldCOCAccIdx = $anCOCAccIdx
-	Local $oldAccFirstStart = $AccFirstStart
-	Local $oldAccTotalTrainedTroops = $AccTotalTrainedTroops
 	
-	If $CoCAccNo = StringLen($lsNewOrd) Then $nCurStep = StringLen($lsNewOrd) - 1
+	If $CoCAccNo <> StringLen($lsNewOrd) Then $nCurStep = StringLen($lsNewOrd) - 1
 	
-	$CoCAccNo = StringLen($lsNewOrd)		;new number of account to play
+	$CoCAccNo = StringLen($lsNewOrd)		;new number of step to switch
 	Redim $anCOCAccIdx[$CoCAccNo]
 	
 	For $i = 0 to $CoCAccNo - 1
 		If Number(StringMid($lsNewOrd, $i + 1, 1)) > 0 And  Number(StringMid($lsNewOrd, $i + 1, 1)) <= $nTotalCOCAcc Then
 			$anCOCAccIdx[$i] = Number(StringMid($lsNewOrd, $i + 1, 1))
 		Else
-			SetLog("Wrong number: " & StringMid($lsNewOrd, $i + 1, 1), $COLOR_RED)
+			SetLog("Wrong acc number: " & StringMid($lsNewOrd, $i + 1, 1), $COLOR_RED)
+			$lbWrongCfg = True
 			If $i <> 0 Then
 				$anCOCAccIdx[$i] = $anCOCAccIdx[$i - 1]
 			Else
@@ -271,7 +270,9 @@ Func ReorderAcc($cfgStr)
 	Next
 	IniWriteS($profile, "switchcocacc", "order", $reorderstr)
 	SetLog("Reordered COC account: [" & $reorderstr & "]: " & AccGetStep(), $COLOR_RED)
-	
+	If $lbWrongCfg Or Not $GUIconfig Then
+		If IsDeclared("txtAccBottingOrder") Then GUICtrlSetData($txtAccBottingOrder, $reorderstr)
+	EndIf
 	Return $reorderstr
 EndFunc   ;==> ReorderAcc
 
@@ -291,44 +292,53 @@ Func ReorderCurPro($cfgStr)
 		$reorderstr &= String($anBotProfileIdx[$i])
 	Next
 	IniWriteS($profile, "switchcocacc", "profile", $reorderstr)
+	GUICtrlSetData($txtProfileIdxOrder, $reorderstr)
 	
 	SetLog("Reordered Bot profile for playing: " & $lsPlaying, $COLOR_RED)
 	Local $comboBoxArray = _GUICtrlComboBox_GetListArray($cmbProfile)
-	$lsPlaying = "(" & $comboBoxArray[$anBotProfileIdx[$anCOCAccIdx[0] - 1]]
+	$lsPlaying = "([" & $anCOCAccIdx[0] & "]" & $comboBoxArray[$anBotProfileIdx[$anCOCAccIdx[0] - 1]]
 	For $i = 1 to $CoCAccNo - 1
-		$lsPlaying &= ", " & $comboBoxArray[$anBotProfileIdx[$anCOCAccIdx[$i] - 1]]
+		$lsPlaying &= ", [" & $anCOCAccIdx[$i] & "]" & $comboBoxArray[$anBotProfileIdx[$anCOCAccIdx[$i] - 1]]
 	Next
 	$lsPlaying &= ")"
 	SetLog($lsPlaying, $COLOR_RED)
 	Return $lsPlaying
 EndFunc   ;==> ReorderCurPro
 
-Func ReorderAllPro($cfgStr)
+Func ReorderAllPro($cfgStr, $GUIconfig = false)
 	;reorder profile for all accounts
 	Local $reorderstr = ""
 	For $i = 1 to $nTotalCOCAcc
 		If Number(StringMid($cfgStr, $i, 1)) > 0 And Number(StringMid($cfgStr, $i, 1)) <= _GUICtrlComboBox_GetCount($cmbProfile) Then 
-			$anBotProfileIdx[$i] = Number(StringMid($cfgStr, $i, 1))
+			$anBotProfileIdx[$i - 1] = Number(StringMid($cfgStr, $i, 1))
 		Else
-			SetLog("Wrong Config Profile: " & StringMid($lsconfig, $i, 1) & ". Keep Current", $COLOR_RED)
+			If $anBotProfileIdx[$i - 1] > 0 And $anBotProfileIdx[$i - 1] <= _GUICtrlComboBox_GetCount($cmbProfile) Then 
+				SetLog("Wrong Config Profile: " & StringMid($cfgStr, $i, 1) & ". Keep Current", $COLOR_RED) 
+			Else
+				$anBotProfileIdx[$i - 1] = 1
+				SetLog("Wrong Config Profile: " & StringMid($cfgStr, $i, 1) & ". Set default 1", $COLOR_RED) 
+			EndIf
 		EndIf
-		$reorderstr &= String($anBotProfileIdx[$i])
+		$reorderstr &= String($anBotProfileIdx[$i - 1])
 	Next
 	
 	IniWriteS($profile, "switchcocacc", "profile", $reorderstr)
-	
+	If $reorderstr <> $cfgStr  Or Not $GUIconfig Then
+		If IsDeclared("txtProfileIdxOrder") Then GUICtrlSetData($txtProfileIdxOrder, $reorderstr)
+	EndIf
 	Local $comboBoxArray = _GUICtrlComboBox_GetListArray($cmbProfile)
-	$reorderstr &= " (" & $comboBoxArray[$anBotProfileIdx[0]]
+	$reorderstr &= " ([1]" & $comboBoxArray[$anBotProfileIdx[0]]
 	For $i = 1 to $nTotalCOCAcc - 1
-		$reorderstr &= ", " & $comboBoxArray[$anBotProfileIdx[$i]]
+		$reorderstr &= ", [" & ($i + 1) & "]" & $comboBoxArray[$anBotProfileIdx[$i]]
 	Next
 	$reorderstr &= ")"
 	SetLog("Reordered Bot profile for all accounts: " & $reorderstr, $COLOR_RED)
+	
 	Return $reorderstr
 EndFunc   ;==> ReorderAllPro
 
 Func InitOrder()
-	Local $lsconfig
+	Local $lsconfig, $lbWrongCfg = false
 	InireadS($lsconfig,$profile, "switchcocacc", "order", "000")
 	If $lsconfig = "000" Then	;first set up (if user not define)
 		$lsconfig = ""
@@ -345,23 +355,35 @@ Func InitOrder()
 		Else
 			SetLog("Wrong Config Account " & $i & ": " & StringMid($lsconfig, $i, 1) & ". Set as 1 [1st account]", $COLOR_RED)
 			$anCOCAccIdx[$i - 1] = 1		;set default
+			$lbWrongCfg = True
 		EndIf
 	Next
-	
+	If $lbWrongCfg Then
+		$lbWrongCfg = False
+		AccSaveConfig()
+	Else
+		If IsDeclared("txtAccBottingOrder") Then GUICtrlSetData($txtAccBottingOrder, $lsconfig)
+	EndIf
 	InireadS($lsconfig,$profile, "switchcocacc", "profile", "00000000")
 	If $lsconfig = "00000000" Then	;first set up
 		$lsconfig = "12345678"
 		IniWriteS($profile, "switchcocacc", "profile", $lsconfig)
 	EndIf
 	For $i = 1 To $nTotalCOCAcc
-		If Number(StringMid($lsconfig, $i, 1)) > 0 Then ; And Number(StringMid($lsconfig, $i, 1)) <= _GUICtrlComboBox_GetCount($cmbProfile) Then
+		If Number(StringMid($lsconfig, $i, 1)) > 0  And Number(StringMid($lsconfig, $i, 1)) <= _GUICtrlComboBox_GetCount($cmbProfile) Then
 			$anBotProfileIdx[$i - 1] = Number(StringMid($lsconfig, $i, 1))
 		Else
 			SetLog("Wrong Config Profile " & $i & ": " & StringMid($lsconfig, $i, 1) & ". Set as 1 [1st profile]", $COLOR_RED)
 			$anBotProfileIdx[$i - 1] = 1		;set default
+			$lbWrongCfg = True
 		EndIf
 	Next
-	; IniWriteS($profile, "switchcocacc", "profile", $lsconfig)
+	If $lbWrongCfg Then
+		$lbWrongCfg = False
+		ProSaveConfig()
+	Else
+		If IsDeclared("txtProfileIdxOrder") Then GUICtrlSetData($txtProfileIdxOrder, $lsconfig)		;StringLeft($lsconfig, $nTotalCOCAcc))
+	EndIf
 
 EndFunc   ;==> InitOrder
 
@@ -379,11 +401,46 @@ Func MapAccPro($imapstr) ; $mapstr = <Account No>-<Profile No> , ie: 1-9, accoun
 	Return False
 EndFunc
 
+Func AccSaveConfig()
+	Local $reorderstr = ""
+	For $i = 1 to $CoCAccNo
+		$reorderstr &= String($anCOCAccIdx[$i - 1])
+	Next
+	IniWriteS($profile, "switchcocacc", "order", $reorderstr)
+	If IsDeclared("txtAccBottingOrder") Then GUICtrlSetData($txtAccBottingOrder, $reorderstr)
+EndFunc   ;==> AccSaveConfig
+
 Func ProSaveConfig()
 	;save profiles for all accounts
 	Local $reorderstr = ""
 	For $i = 1 to $nTotalCOCAcc
-		$reorderstr &= String($anBotProfileIdx[$i])
+		$reorderstr &= String($anBotProfileIdx[$i - 1])
 	Next
 	IniWriteS($profile, "switchcocacc", "profile", $reorderstr)
+	If IsDeclared("txtProfileIdxOrder") Then GUICtrlSetData($txtProfileIdxOrder, $reorderstr)
 EndFunc   ;==> ProSaveConfig
+
+Func ReCfgTotalAcc($anewTotal)
+	Local $newTotal = Int($anewTotal)
+	If $newTotal <= 0 Or $newTotal > 8 Then
+		SetLog("Wrong config total account: " & $newTotal, $COLOR_RED)
+		MsgBox($MB_SYSTEMMODAL, "Alarm!", "Wrong config total account. Only from 1 -> 8 accepted", 10)
+		Return False
+	EndIf
+	If $newTotal <> $nTotalCOCAcc Then
+		SetLog("Total account changed: " & $nTotalCOCAcc & " -> " & $newTotal, $COLOR_RED)
+		$nTotalCOCAcc = $newTotal
+		Redim $anBotProfileIdx[$nTotalCOCAcc]
+		InitOrder()
+		Redim $AccDonBarb[$nTotalCOCAcc], $AccDonArch[$nTotalCOCAcc], $AccDonGiant[$nTotalCOCAcc], $AccDonGobl[$nTotalCOCAcc], $AccDonWall[$nTotalCOCAcc], $AccDonBall[$nTotalCOCAcc], $AccDonWiza[$nTotalCOCAcc], $AccDonHeal[$nTotalCOCAcc]
+		Redim $AccDonMini[$nTotalCOCAcc], $AccDonHogs[$nTotalCOCAcc], $AccDonValk[$nTotalCOCAcc], $AccDonGole[$nTotalCOCAcc], $AccDonWitc[$nTotalCOCAcc], $AccDonLava[$nTotalCOCAcc], $AccDonDrag[$nTotalCOCAcc], $AccDonPekk[$nTotalCOCAcc]
+		Redim $AccBarbComp[$nTotalCOCAcc], $AccArchComp[$nTotalCOCAcc], $AccGoblComp[$nTotalCOCAcc], $AccGiantComp[$nTotalCOCAcc], $AccWallComp[$nTotalCOCAcc], $AccWizaComp[$nTotalCOCAcc], $AccMiniComp[$nTotalCOCAcc], $AccHogsComp[$nTotalCOCAcc]
+		Redim $AccDragComp[$nTotalCOCAcc], $AccBallComp[$nTotalCOCAcc], $AccPekkComp[$nTotalCOCAcc], $AccHealComp [$nTotalCOCAcc], $AccValkComp[$nTotalCOCAcc], $AccGoleComp[$nTotalCOCAcc], $AccWitcComp[$nTotalCOCAcc], $AccLavaComp[$nTotalCOCAcc]
+		Redim $AccCurBarb[$nTotalCOCAcc],  $AccCurArch[$nTotalCOCAcc],  $AccCurGiant[$nTotalCOCAcc], $AccCurGobl[$nTotalCOCAcc],  $AccCurWall[$nTotalCOCAcc],  $AccCurBall[$nTotalCOCAcc],  $AccCurWiza[$nTotalCOCAcc],  $AccCurHeal[$nTotalCOCAcc]
+		Redim $AccCurMini[$nTotalCOCAcc],  $AccCurHogs[$nTotalCOCAcc],  $AccCurValk[$nTotalCOCAcc], $AccCurGole[$nTotalCOCAcc],  $AccCurWitc[$nTotalCOCAcc],  $AccCurLava[$nTotalCOCAcc],  $AccCurDrag[$nTotalCOCAcc],  $AccCurPekk[$nTotalCOCAcc]
+		Redim $AccFirstStart[$nTotalCOCAcc]
+		Redim $AccTotalTrainedTroops[$nTotalCOCAcc]
+	EndIf
+	IniWrite($profile, "switchcocacc" , "totalacc" , $nTotalCOCAcc)
+	Return True
+EndFunc
