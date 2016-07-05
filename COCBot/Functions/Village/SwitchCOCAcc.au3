@@ -282,7 +282,7 @@ Func ReorderCurPro($cfgStr)
 		If Number(StringMid($cfgStr, $i, 1)) > 0 And Number(StringMid($cfgStr, $i, 1)) <= _GUICtrlComboBox_GetCount($cmbProfile) Then 
 			$anBotProfileIdx[$anCOCAccIdx[$i - 1] - 1] = Number(StringMid($cfgStr, $i, 1))
 		Else
-			SetLog("Wrong profile " & $i & ": [" & $StringMid($cfgStr, $i, 1) & "]", $COLOR_RED)
+			SetLog("Wrong profile " & $i & ": [" & StringMid($cfgStr, $i, 1) & "]", $COLOR_RED)
 		EndIf
 		$lsPlaying &= String($anBotProfileIdx[$anCOCAccIdx[$i - 1] - 1])
 	Next
