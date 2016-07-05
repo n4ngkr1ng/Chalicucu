@@ -303,6 +303,7 @@ Func ReorderCurPro($cfgStr)
 	Return $lsPlaying
 EndFunc   ;==> ReorderCurPro
 
+#cs
 Func ReorderAllPro($cfgStr)
 	;reorder profile for all accounts
 	Local $reorderstr = ""
@@ -324,6 +325,40 @@ Func ReorderAllPro($cfgStr)
 	Next
 	$reorderstr &= ")"
 	SetLog("Reordered Bot profile for all accounts: " & $reorderstr, $COLOR_RED)
+	Return $reorderstr
+EndFunc   ;==> ReorderAllPro
+#ce
+
+Func ReorderAllPro($cfgStr, $GUIconfig = false)
+	;reorder profile for all accounts
+	Local $reorderstr = ""
+	For $i = 1 to $nTotalCOCAcc
+		If Number(StringMid($cfgStr, $i, 1)) > 0 And Number(StringMid($cfgStr, $i, 1)) <= _GUICtrlComboBox_GetCount($cmbProfile) Then 
+			$anBotProfileIdx[$i - 1] = Number(StringMid($cfgStr, $i, 1))
+		Else
+			If $anBotProfileIdx[$i - 1] > 0 And $anBotProfileIdx[$i - 1] <= _GUICtrlComboBox_GetCount($cmbProfile) Then 
+				SetLog("Wrong Config Profile: " & StringMid($cfgStr, $i, 1) & ". Keep Current", $COLOR_RED) 
+			Else
+				$anBotProfileIdx[$i - 1] = 1
+				SetLog("Wrong Config Profile: " & StringMid($cfgStr, $i, 1) & ". Set default 1", $COLOR_RED) 
+			EndIf
+		EndIf
+		$reorderstr &= String($anBotProfileIdx[$i - 1])
+	Next
+	
+	IniWriteS($profile, "switchcocacc", "profile", $reorderstr)
+	If $reorderstr <> $cfgStr  Or Not $GUIconfig Then
+		If IsDeclared("txtProfileIdxOrder") Then GUICtrlSetData($txtProfileIdxOrder, $reorderstr)
+	EndIf
+	Local $comboBoxArray = _GUICtrlComboBox_GetListArray($cmbProfile)
+	If _GUICtrlComboBox_GetCount($cmbProfile)=0  Then Return "Set up profiles!"
+	$reorderstr &= " ([1]" & $comboBoxArray[$anBotProfileIdx[0]]
+	For $i = 1 to $nTotalCOCAcc - 1
+		$reorderstr &= ", [" & ($i + 1) & "]" & $comboBoxArray[$anBotProfileIdx[$i]]
+	Next
+	$reorderstr &= ")"
+	SetLog("Reordered Bot profile for all accounts: " & $reorderstr, $COLOR_RED)
+	
 	Return $reorderstr
 EndFunc   ;==> ReorderAllPro
 
