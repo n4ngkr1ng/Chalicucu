@@ -11,7 +11,7 @@
 ; ===============================================================================================================================
 
 
-Global $nTotalCOCAcc 		; Total number of COC Accounts ($nTotalCOCAcc <= 8)
+;Global $nTotalCOCAcc 		; Total number of COC Accounts ($nTotalCOCAcc <= 8). This must be declared already
 
 Global $nActiveCoCAcc = 1
    ; Number of active CoC accounts that you set for Botting.
@@ -36,7 +36,7 @@ Global $nMinRemainTrain				; The minimum remain train time in minutes
 
 Func ResetTrainTimer() ; Run this function first and once to set the remain train timer of all Accounts. All set to 0
 
-   $aActiveCoCAcc = StringSplit(IniRead($Profile,"switchcocacc", "order", "1"), "", $STR_NOCOUNT)
+   $aActiveCoCAcc = StringSplit(IniRead($Profile,"switchcocacc", "order", "1"), "", $STR_NOCOUNT)	; making an array of active acount number, by reading from profile.ini
    $nActiveCoCAcc = UBound($aActiveCoCAcc)
 
    ReDim $aTimerStart[$nTotalCOCAcc]
@@ -55,3 +55,41 @@ Func ResetTrainTimer() ; Run this function first and once to set the remain trai
 EndFunc
 
 
+Func MinRemainTrainAcc()
+
+   ; Check remain training time of all active accounts and return the minimum remain training time
+   ; Suggest the account with shortest training time as the next account for switching to
+
+
+   $aInitialRemainTrainTime[$nCurCOCAcc-1] = Round(RemainTrainTime(True,False),2) 	; remaintraintime of current account - in minutes
+   $aTimerStart[$nCurCOCAcc-1] = TimerInit() 										; start counting elapse of training time of current account
+
+   For $i = 0 to $nTotalCOCAcc - 1
+	  If $aTimerStart[$i] <> 0 Then
+		 $aTimerEnd[$i] = Round(TimerDiff($aTimerStart[$i])/1000/60,2) 				; counting elapse of training time of an account from last army checking - in minutes
+		 $aUpdateRemainTrainTime[$i] = $aInitialRemainTrainTime[$i]-$aTimerEnd[$i] 	; updating remain train time of all accounts (active & inactive)
+
+		 If $aUpdateRemainTrainTime[$i] > 0 Then
+			Setlog("Account [" & $i+1 & "] will finish troop training in: " & $aUpdateRemainTrainTime[$i] & " minutes")
+		 Else
+			Setlog("Account [" & $i+1 & "] finished troop training : " & -$aUpdateRemainTrainTime[$i] & " minutes ago", $COLOR_RED)
+		 EndIf
+
+	  Else ; for accounts at first run or inactive accounts which have not been read their remain train time
+		 Setlog("Account [" & $i+1 & "] has not been read its remain train time")
+		 $aUpdateRemainTrainTime[$i] = 0
+	  EndIf
+   Next
+
+   For $i = 0 To $nActiveCoCAcc - 1
+	  $aRemainTrainTime[$i] = $aUpdateRemainTrainTime[$aActiveCoCAcc[$i]-1]
+   Next ;	Remain train time of active accounts only
+
+
+   $nNextCoCAcc = $aActiveCoCAcc[_ArrayMinIndex($aRemainTrainTime)-1]  				; Index of Account has the shortest remain train time
+   Setlog("Account [" & $nNextCoCAcc & "] is suggest to be the next account for switching", $COLOR_PURPLE)
+   $nMinRemainTrain = _ArrayMin($aRemainTrainTime)
+
+   Return $nMinRemainTrain
+
+EndFunc
