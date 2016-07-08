@@ -146,6 +146,7 @@
 #include "functions\Android\AndroidNox.au3"
 #include "functions\Android\getBSPos.au3"
 
+#include "functions\Other\WerFaultClose.au3"
 #include "functions\Other\_NumberFormat.au3"
 #include "functions\Other\_PadStringCenter.au3"
 #include "functions\Other\_ReduceMemory.au3"
@@ -250,5 +251,4 @@
 #include "functions\Village\UpgradeHeroes.au3"
 #include "functions\Village\ClanLevel.au3"
 #include "functions\Village\StarBonus.au3"
-
 #include "functions\Village\SwitchCOCAcc.au3"		; Chalicucu Switch COC account
