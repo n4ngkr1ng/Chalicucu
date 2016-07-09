@@ -64,4 +64,4 @@ Func getRemainingTraining($Troops = True, $Spells = True) ; Function from DocOct
 		Return 0
 	EndIf
 
-EndFunc   ;==>RemainTrainTime
+EndFunc   ;==>getRemainingTraining
