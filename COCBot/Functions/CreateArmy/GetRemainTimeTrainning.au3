@@ -10,7 +10,7 @@
 ; Example .......: No
 ; ===============================================================================================================================
 
-Func RemainTrainTime($Troops = True, $Spells = True) ; Function from DocOctopus Mod
+Func getRemainingTraining($Troops = True, $Spells = True) ; Function from DocOctopus Mod
 
 	; Lets open the ArmyOverView Window (this function will check if we are on Main Page and wait for the window open returning True or False)
 	If openArmyOverview() Then
