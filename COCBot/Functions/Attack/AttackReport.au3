@@ -143,9 +143,7 @@ Func AttackReport()
 	SetLog("Stars earned: " & $starsearned)
 
 	Local $AtkLogTxt
-	;$AtkLogTxt = "" & _NowTime(4) & "|"
-	;Chalicucu 
-	$AtkLogTxt = String($nCurCOCAcc) & " |" & String(_NowTime(4)) & "|"
+	$AtkLogTxt = "" & _NowTime(4) & "|"
 	$AtkLogTxt &= StringFormat("%5d", $iTrophyCurrent) & "|"
 	$AtkLogTxt &= StringFormat("%6d", $SearchCount) & "|"
 	$AtkLogTxt &= StringFormat("%7d", $iGoldLast) & "|"
@@ -181,10 +179,13 @@ Func AttackReport()
 	If $FirstAttack = 0 Then $FirstAttack = 1
 	$iGoldTotal += $iGoldLast + $iGoldLastBonus
 	$iTotalGoldGain[$iMatchMode] += $iGoldLast + $iGoldLastBonus
+	$aGoldTotalAcc[$nCurProfile-1] += $iGoldLast + $iGoldLastBonus ; Separate Stats per Each Account - Switch Acc Mode - DEMEN
 	$iElixirTotal += $iElixirLast + $iElixirLastBonus
+	$aElixirTotalAcc[$nCurProfile-1] += $iElixirLast + $iElixirLastBonus ; Separate Stats per Each Account - Switch Acc Mode - DEMEN
 	$iTotalElixirGain[$iMatchMode] += $iElixirLast + $iElixirLastBonus
 	If $iDarkStart <> "" Then
 		$iDarkTotal += $iDarkLast + $iDarkLastBonus
+		$aDarkTotalAcc[$nCurProfile-1] += $iDarkLast + $iDarkLastBonus ; Separate Stats per Each Account - Switch Acc Mode - DEMEN
 		$iTotalDarkGain[$iMatchMode] += $iDarkLast + $iDarkLastBonus
 	EndIf
 	$iTrophyTotal += $iTrophyLast
@@ -197,6 +198,7 @@ Func AttackReport()
 		EndIf
 	EndIf
 	$iAttackedVillageCount[$iMatchMode] += 1
+	$aAttackedCountAcc[$nCurProfile-1] += 1 ; Switch Acc Mod - DEMEN
 	UpdateStats()
 
 EndFunc   ;==>AttackReport
